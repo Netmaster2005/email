@@ -1,67 +1,54 @@
-import imaplib
-import email
+import win32com.client
 import os
+import pythoncom
 
-# Your Outlook credentials
-useName = "kwablahklawrence@outlook.com"  # Replace with your Outlook email
-passWord = "ZKMPC-59P68-65BKQ-RJQPT-EN3L9"          # Replace with your Outlook password or app password
-imap_url = "outlook.office365.com"
+def process_outlook_emails():
+    # Initialize COM
+    pythoncom.CoInitialize()
 
-# Connect to the IMAP server
-try:
-    mail = imaplib.IMAP4_SSL(imap_url)
-    mail.login(useName, passWord)
-    print("Logged in successfully!")
-except Exception as e:
-    print(f"Failed to log in: {e}")
-    exit()
+    try:
+        # Initialize Outlook application
+        outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
 
-# Select the mailbox you want to use
-mail.select("Inbox")  # Or any other folder you want to access
+        # Access the inbox folder (Folder number 6 is the inbox)
+        inbox = outlook.GetDefaultFolder(6)
+        messages = inbox.Items
 
-# Search for emails (e.g., all emails with attachments)
-status, email_ids = mail.search(None, 'ALL')  # You can filter emails using criteria like 'FROM', 'SUBJECT', etc.
+        # Sort emails by received time (newest first)
+        messages.Sort("[ReceivedTime]", True)
 
-# Convert email IDs to a list
-email_id_list = email_ids[0].split()
-print(f"Found {len(email_id_list)} emails.")
+        # Filter emails by sender and subject (e.g., emails containing "invoice" in the subject)
+        filter_criteria = "[SenderName] = 'Kwashie Andoh'"
+        filtered_messages = messages.Restrict(filter_criteria)
 
-# Directory to save attachments
-attachment_dir = "attachments"
-if not os.path.exists(attachment_dir):
-    os.makedirs(attachment_dir)
+        # Loop through filtered emails
+        for message in filtered_messages:
+            print(f"Found email from: {message.SenderName} - Subject: {message.Subject}")
 
-# Loop through emails to fetch and download attachments
-for email_id in email_id_list:
-    # Fetch the email
-    status, data = mail.fetch(email_id, '(RFC822)')
-    if status != "OK":
-        print(f"Failed to fetch email ID {email_id}")
-        continue
+            # Check if the email has attachments
+            if message.Attachments.Count > 0:
+                print(f"Processing {message.Attachments.Count} attachment(s)...")
 
-    # Parse the email
-    raw_email = data[0][1]
-    msg = email.message_from_bytes(raw_email)
+                # Loop through attachments
+                for attachment in message.Attachments:
+                    try:
+                        # Define the save path for the attachment
+                        save_path = os.path.join("C:/Users/USER/Documents/", attachment.FileName)
 
-    # Extract email details
-    subject = msg["subject"]
-    sender = msg["from"]
-    print(f"Processing email from {sender} with subject '{subject}'")
+                        # Save the attachment to the specified location
+                        attachment.SaveAsFile(save_path)
+                        print(f"Attachment '{attachment.FileName}' saved to {save_path}.")
+                    except Exception as e:
+                        print(f"Failed to save '{attachment.FileName}': {e}")
+            else:
+                print("No attachments found in this email.")
 
-    # Process email parts to find attachments
-    for part in msg.walk():
-        if part.get_content_maintype() == "multipart":
-            continue
-        if part.get("Content-Disposition") is None:
-            continue
+    except Exception as e:
+        print(f"An error occurred: {e}")
 
-        # Get the attachment filename
-        filename = part.get_filename()
-        if filename:
-            filepath = os.path.join(attachment_dir, filename)
-            with open(filepath, "wb") as f:
-                f.write(part.get_payload(decode=True))
-            print(f"Downloaded attachment: {filename}")
+    finally:
+        # Release COM
+        pythoncom.CoUninitialize()
 
-# Logout from the mail server
-mail.logout()
+# Run the function
+process_outlook_emails()

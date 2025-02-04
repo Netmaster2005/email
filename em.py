@@ -9,15 +9,12 @@ inbox = outlook.GetDefaultFolder(6)
 messages = inbox.Items
 
 # Loop through all emails in the inbox
-for message in messages:
-    # Check the subject of the email
-    if message.SenderName == "Microsoft account team":
-        print(f"Found email: {message.SenderName}")
+filtered_messages = messages.Restrict("[SenderName] = 'Kwashie Andoh'")
+for message in filtered_messages:
+    print(f"Found email: {message.SenderName}")
 
-        # Loop through attachments
-        attachments = message.Attachments
-        for attachment in attachments:
-            # Save attachment to the desired location
-            attachment.SaveAsFile(os.path.join("C:/Users/USER/Documents/", attachment.FileName))
-            print(f"Attachment {attachment.FileName} saved.")
+# Loop through attachments
+if message.Attachments.Count > 0:
+    for attachment in message.Attachments:
+        attachment.SaveAsFile(os.path.join("C:/Users/USER/Documents/", attachment.FileName))
 

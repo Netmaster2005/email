@@ -2,7 +2,8 @@ import imaplib
 import email
 import os
 
-from credentials import useName,passWord
+useName = "myronadjei407@gmail.com"  # Replace with your Outlook email
+passWord = "bpmpvuyqrvdapojn" 
 
 imap_url ='imap.gmail.com'
 my_mail = imaplib.IMAP4_SSL(imap_url)
@@ -39,7 +40,7 @@ for i in range(latest_email_id,first_email_id, -1):
                     continue
                 fileName = part.get_filename()
                 if bool(fileName):
-                    filePath = os.path.join('C:/Users/tejas/Documents/', fileName)
+                    filePath = os.path.join('C:/Users/USER/Documents/', fileName)
                     if not os.path.isfile(filePath) :
                         fp = open(filePath, 'wb')
                         fp.write(part.get_payload(decode=True))
