@@ -1,20 +1,23 @@
-import win32com.client
-import os
+import subprocess
+import getpass
 
-# Initialize Outlook application
-outlook = win32com.client.Dispatch("Outlook.Application").GetNamespace("MAPI")
+def run_email_script(email_address, password):
+    # Extract the domain from the email address.
+    domain = email_address.split('@')[-1].lower()
 
-# Access the inbox folder (Folder number 6 is the inbox)
-inbox = outlook.GetDefaultFolder(6)
-messages = inbox.Items
+    # Depending on the domain, run the corresponding script.
+    if domain == "gmail.com":
+        print("Running Gmail script...")
+        subprocess.run(["python", "gmail.py", email_address, password])
+    elif domain == "outlook.com":
+        print("Running Outlook script...")
+        subprocess.run(["python", "outlook.py"])
+    else:
+        print("Unsupported email domain:", domain)
 
-# Loop through all emails in the inbox
-filtered_messages = messages.Restrict("[SenderName] = 'Kwashie Andoh'")
-for message in filtered_messages:
-    print(f"Found email: {message.SenderName}")
-
-# Loop through attachments
-if message.Attachments.Count > 0:
-    for attachment in message.Attachments:
-        attachment.SaveAsFile(os.path.join("C:/Users/USER/Documents/", attachment.FileName))
-
+if __name__ == "__main__":
+    # Prompt the user for their email and password.
+    user_email = input("Enter your email address: ")
+    user_password = getpass.getpass("Enter your password: ")
+    
+    run_email_script(user_email, user_password)
